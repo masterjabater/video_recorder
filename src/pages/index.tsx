@@ -57,12 +57,7 @@ const composer = (() => {
       height: HEIGHT
     },
   });
-  mediaStreamComposer.setMouseTool("move-resize");
-  mediaStreamComposer.setDrawingSettings({
-    color: "#ff0000",
-    lineWidth: 6,
-    autoEraseDelay: 2
-  });
+  
   mediaStreamComposer.addEventListener("recordingStopped", (e: any) => {
     if (e.data.file) {
       const a = document.createElement("a");
@@ -97,15 +92,12 @@ const Home: NextPage = () => {
   const [uploadToken, setUploadToken] = useState<string>(DEFAULT_UPLOAD_TOKEN);
   const [videoName, setVideoName] = useState<string>('')
 
-  const [drawingColor, setDrawingColor] = useState("#ff6900");
-  const [drawingAutoEraseDelay, setDrawingAutoEraseDelay] = useState(0);
-
   const [firstStreamAddedAlertOpen, setFirstStreamAddedAlertOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [audioSource, setAudioSource] = useState<string>("none");
   const [audioStreamId, setAudioStreamId] = useState<string | undefined>();
   const [uploadSettings, setUploadSettings] = useState<UploadSettings>({
-    videoName: "My record.a.video composition",
+    videoName: "Yumi's 4th Birthday Greeting!",
     downloadVideoFile: false,
   });
   const [videoStatus, setVideoStatus] = useState<"recording" | "encoding" | "playable" | undefined>();
@@ -124,18 +116,6 @@ const Home: NextPage = () => {
       setUploadToken(router.query.uploadToken as string);
     }
   }, [router.query])
-
-  // update the drawing settings when related states are changed
-  useEffect(() => {
-    if (composer) {
-      composer.setDrawingSettings({
-        color: drawingColor,
-        lineWidth: 6,
-        autoEraseDelay: drawingAutoEraseDelay,
-      });
-    }
-  }, [drawingColor, drawingAutoEraseDelay]);
-
 
   // handle the record duration timer
   useEffect(() => {
@@ -287,86 +267,21 @@ const Home: NextPage = () => {
       <div className={styles.container}>
         <ThemeProvider theme={theme}>
           <Head>
-            <title>@api.video/media-stream-composer library sample application</title>
-            <meta name="description" content="Next.js application showing the features offered by the @api.video/media-stream-composer library." />
+            <title>Video Recorder and Uploader</title>
+            <meta name="description" content="records and uploads video" />
             <link rel="icon" href="/favicon.ico" />
           </Head>
 
             <Paper className={styles.settingsPaper} elevation={0}>
               <div className={styles.header}><NextImage src="/logo.svg" alt="api.video logo" width={65} height={15} /></div>
               <h2>
-                <p>Video streams</p>
+                <p>Select Video Source</p>
                 <PopupState variant="popover" popupId="addStreamMenu">
                   {(popupState) => (
                     <React.Fragment>
                       <Tooltip title="Add" arrow><Button variant="text" {...bindTrigger(popupState)}><AddIcon fontSize='medium' sx={{ mr: 1 }} /></Button></Tooltip>
                       <Menu {...bindMenu(popupState)}>
-                        <MenuItem onClick={async () => { popupState.close(); setAddStreamDialogOpen(true); }}>Add a custom stream ...</MenuItem>
-                        <MenuItem onClick={async () => {
-                          popupState.close();
-                          addStream({
-                            type: "image",
-                            imageUrl: "/Logo_white_text.svg",
-                            position: "fixed",
-                            width: "38%",
-                            top: "88%",
-                            left: "60%",
-                            mask: "none",
-                            draggable: true,
-                            resizable: true,
-                          });
-                        }}>Add api.video logo :)</MenuItem>
-
-                        {videoDevices.map(d =>
-                        ([
-                          <MenuItem key={d.deviceId + "_screen"} onClick={async () => {
-                            popupState.close();
-                            addStream({
-                              type: "screen",
-                              position: "contain",
-                              mask: "none",
-                              draggable: true,
-                              resizable: true,
-                            });
-                            addStream({
-                              type: "webcam",
-                              deviceId: d.deviceId,
-                              position: "fixed",
-                              height: "30%",
-                              top: "68%",
-                              left: "2%",
-                              mask: "circle",
-                              draggable: true,
-                              resizable: true,
-                            });
-                          }}>Add screencast + rounded webcam ({d.label})</MenuItem>,
-                          <MenuItem key={d.deviceId} onClick={async () => {
-                            popupState.close();
-                            addStream({
-                              type: "webcam",
-                              deviceId: d.deviceId,
-                              position: "fixed",
-                              height: "30%",
-                              top: "68%",
-                              left: "2%",
-                              mask: "circle",
-                              draggable: true,
-                              resizable: true,
-                            });
-                          }}>Add rounded webcam only ({d.label})</MenuItem>,]))
-                        }
-
-                        <MenuItem onClick={async () => {
-                          popupState.close();
-                          addStream({
-                            type: "screen",
-                            position: "contain",
-                            mask: "none",
-                            draggable: false,
-                            resizable: false,
-                          });
-                        }}>Add screencast only</MenuItem>
-
+                        <MenuItem onClick={async () => { popupState.close(); setAddStreamDialogOpen(true); }}>Add Video Camera...</MenuItem>
                       </Menu>
                     </React.Fragment>
                   )}
@@ -415,7 +330,7 @@ const Home: NextPage = () => {
                 )
               }
 
-              <h2>Audio source</h2>
+              <h2>Select Mic or Audio Source</h2>
               <FormControl className={styles.formControl} fullWidth>
                 <NextImage src="/mic.svg" alt="Microphone" width={16} height={16} />
                 <Select
@@ -440,60 +355,6 @@ const Home: NextPage = () => {
                   <MenuItem key={"undefined"} value={"none"}>None</MenuItem>
                   {audioDevices.map(d => <MenuItem key={d.deviceId} value={d.deviceId}>{d.label}</MenuItem>)}
                 </Select>
-              </FormControl>
-
-              <h2>Tool</h2>
-              <FormControl component="fieldset">
-                <FormGroup>
-                  <ToggleButtonGroup
-                    fullWidth
-                    size="small"
-                    color="primary"
-                    value={mouseTool}
-                    className={styles.toolButtonGroup}
-                    exclusive
-                    onChange={(v, w) => {
-                      composer.setMouseTool(w);
-                      setMouseTool(w);
-                    }
-                    }
-                  >
-                    <ToggleButton className={styles.toggleButton} disabled={streams.length === 0} value="move-resize">
-                      <FullscreenExitIcon className={styles.toggleButtonIcon} />
-                      Move / Resize
-                    </ToggleButton>
-                    <ToggleButton className={styles.toggleButton} disabled={streams.length === 0} value="draw">
-                      <GestureIcon className={styles.toggleButtonIcon} />
-                      Draw
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                  {mouseTool === "draw" && <>
-                    <FormLabel component="legend">Line color</FormLabel>
-                    <CirclePicker
-                      color={drawingColor}
-                      colors={['#FF6900', '#FCB900', '#9900EF', '#00D084', '#8ED1FC', '#0693E3']}
-                      onChange={(color: any) => { setDrawingColor(color.hex) }}
-                    />
-                    <FormControl variant="standard">
-                      <FormLabel component="legend">Auto erase delay</FormLabel>
-                      <Select
-                        labelId="width-select-standard-label"
-                        id="width-select-standard"
-                        value={drawingAutoEraseDelay}
-                        onChange={(v, w) => { setDrawingAutoEraseDelay(parseInt(v.target.value as string)) }}
-                        label="Auto erase delay"
-                      >
-                        <MenuItem value={0}>disabled</MenuItem>
-                        <MenuItem value={3}>3 seconds</MenuItem>
-                        <MenuItem value={5}>5 seconds</MenuItem>
-                        <MenuItem value={10}>10 seconds</MenuItem>
-                      </Select>
-                    </FormControl>
-
-                    <Button variant="outlined" style={{ marginTop: "1em" }} onClick={() => composer.clearDrawing()}>clear drawings</Button>
-
-                  </>}
-                </FormGroup>
               </FormControl>
 
               <SettingsIcon color='primary' onClick={() => setUploadSettingsDialogOpen(true)} className={styles.settingsButton} />
@@ -559,7 +420,7 @@ const Home: NextPage = () => {
                     <Step completed={stepNum > 0} className={styles.step}>
                       <StepLabel style={{ fontWeight: "bold" }}>Uploading</StepLabel>
                         <Typography variant="caption" className={styles.stepContent}>
-                          The video is currently being recorded and uploaded simultaneously thanks to api.video&apos;s <a target="_blank" rel="noreferrer" href="https://api.video/blog/tutorials/progressively-upload-large-video-files-without-compromising-on-speed">progressive upload</a> feature.
+                          The video is currently being recorded and uploaded simultaneously..
                         </Typography>
                     </Step>
 
@@ -567,7 +428,7 @@ const Home: NextPage = () => {
                       <StepLabel>Encoding</StepLabel>
                       {
                         stepNum > 0 &&
-                          <Typography variant="caption">Your recording is currently being encoded in HLS for optimal streaming. It will be available soon. Please wait.</Typography>
+                          <Typography variant="caption">Your recording is currently being processed. Please wait.</Typography>
                       }
                     </Step>
 
@@ -577,7 +438,7 @@ const Home: NextPage = () => {
                         stepNum > 1 &&
                           <>
                             <Typography variant="caption">
-                              You can watch the recording <a href={playerUrl!} rel="noreferrer" target="_blank">by clicking here</a>. Higher qualities are still being processed. The viewing experience will be even better if you refresh the player in a few seconds.
+                              You can watch the recording <a href={playerUrl!} rel="noreferrer" target="_blank">by clicking here</a>.
                             </Typography><br />
                           </>
                       }
@@ -587,10 +448,6 @@ const Home: NextPage = () => {
               )}
 
         </ThemeProvider>
-      </div>
-      <div className={styles.textsContainer}>
-        <p>This Next.js application aims to show the features offered by the <a target="_blank" rel="noreferrer" href="https://github.com/apivideo/api.video-typescript-media-stream-composer">@api.video/media-stream-composer</a> library. </p>
-        <p>The code of the application is available on GitHub here: <a target="_blank" rel="noreferrer" href="https://github.com/apivideo/api.video-typescript-media-stream-composer/tree/main/examples/record.a.video">record.a.video</a>.</p>
       </div>
     </>
   )
